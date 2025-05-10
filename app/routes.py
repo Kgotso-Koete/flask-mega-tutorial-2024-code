@@ -1,8 +1,18 @@
+from flask import render_template
 from app import app
 
-# when a web browser requests either of these two URLs, Flask is going to invoke this function and pass its return value 
-# back to the browser as a response
 @app.route('/')
 @app.route('/index')
 def index():
-    return "Hello, World!"
+    user = {'username': 'Miguel'}
+    posts = [
+        {
+            'author': {'username': 'John'},
+            'body': 'Beautiful day in Portland!'
+        },
+        {
+            'author': {'username': 'Susan'},
+            'body': 'The Avengers movie was so cool!'
+        }
+    ]
+    return render_template('index.html', title='Home', user=user, posts=posts)

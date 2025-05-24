@@ -47,6 +47,11 @@ This will install all the necessary packages including:
 - Flask-WTF 1.2.2
 - And other required dependencies
 
+## Debugging email serverr
+
+Run `aiosmtpd -n -c aiosmtpd.handlers.Debugging -l localhost:8025` if debug is set to 0.
+
+
 ## Tutorial
 
 Chapter 1 [pdf file](./tutorial/chapter-1.pdf) and [YouTube](https://youtu.be/9FBDda0NCwo)

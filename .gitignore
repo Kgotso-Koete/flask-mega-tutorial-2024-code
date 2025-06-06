@@ -32,3 +32,6 @@ tmp*
 .vscode/
 *.swp
 *~
+
+# Babel
+# messages.pot

@@ -50,6 +50,13 @@ This will install all the necessary packages including:
 - Flask-WTF 1.2.2
 - And other required dependencies
 
+Dump a list pf installed packages using the command:
+
+```bash
+pip freeze > requirements.txt
+```
+
+
 ### Run database migrations
 
 Migrate any database changes with the following:

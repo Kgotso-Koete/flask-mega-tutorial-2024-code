@@ -35,3 +35,6 @@ tmp*
 
 # Babel
 # messages.pot
+
+# Virtual machines
+.vagrant/

@@ -56,7 +56,6 @@ Dump a list pf installed packages using the command:
 pip freeze > requirements.txt
 ```
 
-
 ### Run database migrations
 
 Migrate any database changes with the following:
@@ -74,6 +73,39 @@ flask db upgrade
 ## Debugging email serverr
 
 Run `aiosmtpd -n -c aiosmtpd.handlers.Debugging -l localhost:8025` if debug is set to 0.
+
+## Running the app as a Docker container
+
+1. Command to run the mySQL server
+
+```bash
+docker run --name mysql -d -e MYSQL_RANDOM_ROOT_PASSWORD=yes \
+    -e MYSQL_DATABASE=microblog -e MYSQL_USER=microblog \
+    -e MYSQL_PASSWORD=<database-password> \
+    --network microblog-network \
+    mysql:latest
+```
+
+2. Command to run the Elastic Search server
+
+```bash
+docker run --name elasticsearch -d --rm -p 9200:9200 \
+    -e discovery.type=single-node -e xpack.security.enabled=false \
+    --network microblog-network \
+    -t docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+```
+
+3. Command to run the Flask application
+
+```bash
+docker run --name microblog -d -p 8000:5000 --rm -e SECRET_KEY=my-secret-key \
+    -e MAIL_SERVER=smtp.googlemail.com -e MAIL_PORT=587 -e MAIL_USE_TLS=true \
+    -e MAIL_USERNAME=<your-gmail-username> -e MAIL_PASSWORD=<your-gmail-password> \
+    --network microblog-network \
+    -e DATABASE_URL=mysql+pymysql://microblog:<database-password>@mysql/microblog \
+    -e ELASTICSEARCH_URL=http://elasticsearch:9200 \
+    microblog:latest
+```
 
 ## Tutorial
 

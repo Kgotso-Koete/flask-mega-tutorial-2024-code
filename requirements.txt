@@ -7,6 +7,7 @@ blinker==1.9.0
 certifi==2025.4.26
 charset-normalizer==3.4.2
 click==8.1.8
+croniter==6.0.0
 dnspython==2.7.0
 elastic-transport==8.17.1
 elasticsearch==8.18.1
@@ -31,7 +32,9 @@ PyJWT==2.10.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.0
 pytz==2025.2
+redis==6.4.0
 requests==2.32.4
+rq==2.5.0
 six==1.17.0
 SQLAlchemy==2.0.40
 typing_extensions==4.13.2

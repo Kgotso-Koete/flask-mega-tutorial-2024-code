@@ -8,6 +8,11 @@
 - Virtual environment (recommended)
 - pip (Python package installer)
 
+Requirements for Heroku
+
+- psycopg2-binary==2.9.9
+- gunicorn==21.2.0
+
 ### Setting Up Virtual Environment
 
 1. Create a virtual environment:
@@ -44,6 +49,62 @@ pip install -r requirements.txt
 
 This will install all the necessary packages including:
 
+### Redis Setup
+
+This project uses Redis for task queue management. Follow these steps to set up Redis:
+
+1. Install Redis server:
+   ```bash
+   sudo apt update
+   sudo apt install redis-server
+   ```
+
+2. Start the Redis service:
+   ```bash
+   sudo systemctl start redis
+   ```
+
+3. (Optional) To enable Redis to start on boot:
+   ```bash
+   sudo systemctl enable redis
+   ```
+
+4. Verify Redis is running:
+   ```bash
+   redis-cli ping
+   ```
+   You should see `PONG` as the response.
+
+5. Install the Python Redis client:
+   ```bash
+   pip install redis
+   ```
+
+6. Start the RQ worker in a separate terminal:
+   ```bash
+   rq worker microblog-tasks
+   ```
+
+### Heroku Redis Setup
+
+For production deployment on Heroku, use the Heroku Redis add-on:
+
+1. Add the Heroku Redis add-on (mini plan, which is the most cost-effective):
+   ```bash
+   heroku addons:create heroku-redis:mini
+   ```
+   
+   Note: The mini plan is free for development but has limitations. For production, consider a higher plan.
+
+2. The Redis URL will be automatically set in the `REDIS_URL` config var in Heroku.
+
+3. The RQ worker will automatically use the Heroku Redis instance when deployed.
+
+4. To check the Redis connection status:
+   ```bash
+   heroku redis:info -a your-app-name
+   ```
+
 - Flask 3.1.0
 - Flask-SQLAlchemy 3.1.1
 - Flask-Migrate 4.1.0
@@ -76,7 +137,7 @@ Run `aiosmtpd -n -c aiosmtpd.handlers.Debugging -l localhost:8025` if debug is s
 
 ## Running the app as a Docker container
 
-1. Command to run the mySQL server
+1. Command to run the MySQL server:
 
 ```bash
 docker run --name mysql -d -e MYSQL_RANDOM_ROOT_PASSWORD=yes \
@@ -86,7 +147,15 @@ docker run --name mysql -d -e MYSQL_RANDOM_ROOT_PASSWORD=yes \
     mysql:latest
 ```
 
-2. Command to run the Elastic Search server
+2. Command to run the Redis server:
+
+```bash
+docker run --name redis -d -p 6379:6379 \
+    --network microblog-network \
+    redis:latest
+```
+
+3. Command to run the Elasticsearch server:
 
 ```bash
 docker run --name elasticsearch -d --rm -p 9200:9200 \
@@ -95,7 +164,7 @@ docker run --name elasticsearch -d --rm -p 9200:9200 \
     -t docker.elastic.co/elasticsearch/elasticsearch:8.11.1
 ```
 
-3. Command to run the Flask application
+4. Command to run the Flask application:
 
 ```bash
 docker run --name microblog -d -p 8000:5000 --rm -e SECRET_KEY=my-secret-key \
@@ -104,8 +173,25 @@ docker run --name microblog -d -p 8000:5000 --rm -e SECRET_KEY=my-secret-key \
     --network microblog-network \
     -e DATABASE_URL=mysql+pymysql://microblog:<database-password>@mysql/microblog \
     -e ELASTICSEARCH_URL=http://elasticsearch:9200 \
+    -e REDIS_URL=redis://redis:6379/0 \
+    -e MS_TRANSLATOR_KEY=<paste-your-key-here> \
     microblog:latest
 ```
+
+5. Command to run the RQ worker (run in a separate terminal):
+
+```bash
+docker run --name rq-worker -d --rm -e SECRET_KEY=my-secret-key \
+    -e MAIL_SERVER=smtp.googlemail.com -e MAIL_PORT=587 -e MAIL_USE_TLS=true \
+    -e MAIL_USERNAME=<your-gmail-username> -e MAIL_PASSWORD=<your-gmail-password> \
+    --network microblog-network \
+    -e DATABASE_URL=mysql+pymysql://microblog:<database-password>@mysql/microblog \
+    -e REDIS_URL=redis://redis:6379/0 \
+    --entrypoint venv/bin/rq \
+    microblog:latest worker -u redis://redis:6379/0 microblog-tasks
+```
+
+Note: The RQ worker command overrides the default container entrypoint to run the RQ worker instead of the web application. The worker needs access to the same code and environment variables as the main application to process background tasks.
 
 ## Tutorial
 

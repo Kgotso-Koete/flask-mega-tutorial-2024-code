@@ -137,6 +137,12 @@ Run `aiosmtpd -n -c aiosmtpd.handlers.Debugging -l localhost:8025` if debug is s
 
 ## Running the app as a Docker container
 
+Any time a change is made to the application or the Dockerfile, the container image needs to be rebuilt:
+
+```bash
+docker build -t microblog:latest .
+```
+
 1. Command to run the MySQL server:
 
 ```bash
@@ -178,7 +184,7 @@ docker run --name microblog -d -p 8000:5000 --rm -e SECRET_KEY=my-secret-key \
     microblog:latest
 ```
 
-5. Command to run the RQ worker (run in a separate terminal):
+5. Run the RQ worker in a separate terminal:
 
 ```bash
 docker run --name rq-worker -d --rm -e SECRET_KEY=my-secret-key \
@@ -192,6 +198,38 @@ docker run --name rq-worker -d --rm -e SECRET_KEY=my-secret-key \
 ```
 
 Note: The RQ worker command overrides the default container entrypoint to run the RQ worker instead of the web application. The worker needs access to the same code and environment variables as the main application to process background tasks.
+
+
+## Heroku Add-ons
+
+This application uses the following Heroku add-ons. You can list them using:
+
+```bash
+heroku addons
+```
+
+### Current Add-ons Configuration:
+
+```
+Add-on            Plan        Price        Max price State   
+───────────────── ─────────── ──────────── ───────── ─────── 
+heroku-postgresql essential-0 ~$0.007/hour $5/month  created 
+ └─ as DATABASE                                              
+                                                             
+heroku-redis      mini        ~$0.004/hour $3/month  created 
+ └─ as REDIS                                                 
+                                                             
+searchbox         starter     free         free      created 
+ └─ as SEARCHBOX                                             
+```
+
+To check detailed information about any add-on, use:
+
+```bash
+heroku addons:info heroku-redis  # For Redis
+heroku addons:info heroku-postgresql  # For PostgreSQL
+```
+
 
 ## Tutorial
 

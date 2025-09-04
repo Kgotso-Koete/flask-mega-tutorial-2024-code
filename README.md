@@ -1,3 +1,10 @@
+# Welcome to Microblog!
+
+This is an example application featured in my [Flask Mega-Tutorial](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world). See the tutorial for instructions on how to work with it.
+
+The version of the application featured in this repository corresponds to the 2024 edition of the Flask Mega-Tutorial. You can find the 2018 and 2021 versions of the code [here](https://github.com/miguelgrinberg/microblog-2018). And if for any strange reason you are interested in the original code, dating back to 2012, that is [here](https://github.com/miguelgrinberg/microblog-2012).
+
+
 # Flask Mega Tutorial
 
 ## Getting Started
@@ -40,6 +47,31 @@ Requirements for Heroku
    ```
 
 ### Installing Dependencies
+
+### Database Migrations
+
+After making changes to your database models, you'll need to create and apply migrations:
+
+1. Create a new migration (after modifying your models):
+   ```bash
+   flask db migrate -m "Description of changes"
+   ```
+
+2. Apply the migration to update your database:
+   ```bash
+   flask db upgrade
+   ```
+
+3. To check the current database revision:
+   ```bash
+   flask db current
+   ```
+
+4. To rollback the last migration:
+   ```bash
+   flask db downgrade
+   ```
+
 
 With your virtual environment activated, install the required packages:
 

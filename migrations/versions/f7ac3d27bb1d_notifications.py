@@ -1,8 +1,8 @@
 """notifications
 
-Revision ID: b659b2281169
-Revises: 71d4d7903fe0
-Create Date: 2025-08-21 21:32:55.411462
+Revision ID: f7ac3d27bb1d
+Revises: d049de007ccf
+Create Date: 2017-11-22 19:48:39.945858
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'b659b2281169'
-down_revision = '71d4d7903fe0'
+revision = 'f7ac3d27bb1d'
+down_revision = 'd049de007ccf'
 branch_labels = None
 depends_on = None
 
@@ -27,11 +27,11 @@ def upgrade():
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+
     with op.batch_alter_table('notification', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_notification_name'), ['name'], unique=False)
         batch_op.create_index(batch_op.f('ix_notification_timestamp'), ['timestamp'], unique=False)
         batch_op.create_index(batch_op.f('ix_notification_user_id'), ['user_id'], unique=False)
-
     # ### end Alembic commands ###
 
 

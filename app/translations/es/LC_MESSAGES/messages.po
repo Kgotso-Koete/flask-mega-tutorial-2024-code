@@ -317,3 +317,4 @@ msgstr "Ha ocurrido un error inesperado"
 #: app/templates/errors/500.html:5
 msgid "The administrator has been notified. Sorry for the inconvenience!"
 msgstr "El administrador ha sido notificado. ¡Lamentamos la inconveniencia!"
+

@@ -1,42 +1,75 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <table class="table table-hover">
-        <tr>
-            <td width="256px"><img src="{{ user.avatar(256) }}"></td>
-            <td>
-                <h1>{{ _('User') }}: {{ user.username }}</h1>
-                {% if user.about_me %}<p>{{ user.about_me }}</p>{% endif %}
-                {% if user.last_seen %}
-                <p>{{ _('Last seen on') }}: {{ moment(user.last_seen).format('LLL') }}</p>
+<div class="container">
+    <div class="profile-container">
+        <div class="row">
+            <div class="col-md-3 text-center">
+                <img src="{{ user.avatar(200) }}" class="profile-avatar" alt="{{ user.username }}'s avatar">
+                
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">{{ user.followers_count() }}</span>
+                        <span class="stat-label">{{ _('Followers') }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">{{ user.following_count() }}</span>
+                        <span class="stat-label">{{ _('Following') }}</span>
+                    </div>
+                </div>
+                
+                <div class="profile-actions">
+                    {% if user == current_user %}
+                        <a href="{{ url_for('main.edit_profile') }}" class="btn btn-edit">
+                            {{ _('Edit Profile') }}
+                        </a>
+                        {% if not current_user.get_task_in_progress('export_posts') %}
+                        <a href="{{ url_for('main.export_posts') }}" class="btn btn-outline-secondary">
+                            {{ _('Export Posts') }}
+                        </a>
+                        {% endif %}
+                    {% elif not current_user.is_following(user) %}
+                        <form action="{{ url_for('main.follow', username=user.username) }}" method="post" class="d-inline">
+                            {{ form.hidden_tag() }}
+                            <button type="submit" class="btn btn-primary">{{ _('Follow') }}</button>
+                        </form>
+                    {% else %}
+                        <form action="{{ url_for('main.unfollow', username=user.username) }}" method="post" class="d-inline">
+                            {{ form.hidden_tag() }}
+                            <button type="submit" class="btn btn-outline-secondary">{{ _('Following') }}</button>
+                        </form>
+                    {% endif %}
+                    
+                    {% if user != current_user %}
+                    <a href="{{ url_for('main.send_message', recipient=user.username) }}" class="btn btn-message">
+                        {{ _('Message') }}
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="col-md-9">
+                <h1 class="profile-username">{{ user.username }}</h1>
+                
+                {% if user.about_me %}
+                <div class="profile-bio">
+                    {{ user.about_me }}
+                </div>
                 {% endif %}
-                <p>{{ _('%(count)d followers', count=user.followers_count()) }}, {{ _('%(count)d following', count=user.following_count()) }}</p>
-                {% if user == current_user %}
-                <p><a href="{{ url_for('main.edit_profile') }}">{{ _('Edit your profile') }}</a></p>
-                {% if not current_user.get_task_in_progress('export_posts') %}
-                <p><a href="{{ url_for('main.export_posts') }}">{{ _('Export your posts') }}</a></p>
-                {% endif %}
-                {% elif not current_user.is_following(user) %}
-                <p>
-                    <form action="{{ url_for('main.follow', username=user.username) }}" method="post">
-                        {{ form.hidden_tag() }}
-                        {{ form.submit(value=_('Follow'), class_='btn btn-primary') }}
-                    </form>
-                </p>
-                {% else %}
-                <p>
-                    <form action="{{ url_for('main.unfollow', username=user.username) }}" method="post">
-                        {{ form.hidden_tag() }}
-                        {{ form.submit(value=_('Unfollow'), class_='btn btn-primary') }}
-                    </form>
-                </p>
-                {% endif %}
-                {% if user != current_user %}
-                <p><a href="{{ url_for('main.send_message', recipient=user.username) }}">{{ _('Send private message') }}</a></p>
-                {% endif %}
-            </td>
-        </tr>
-    </table>
+                
+                <div class="profile-meta">
+                    {% if user.last_seen %}
+                    <p><i class="far fa-clock"></i> {{ _('Last seen') }} {{ moment(user.last_seen).fromNow() }}</p>
+                    {% endif %}
+                    {% if user.member_since %}
+                    <p><i class="far fa-calendar-alt"></i> {{ _('Member since') }} {{ moment(user.member_since).format('LL') }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <h2 class="posts-header">{{ _('Posts') }}</h2>
     {% for post in posts %}
         {% include '_post.html' %}
     {% endfor %}

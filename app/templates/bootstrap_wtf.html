@@ -44,7 +44,7 @@
   {%- endif %}
 {% endmacro %}
 
-{% macro quick_form(form, action="", method="post", id="", novalidate=False) %}
+{% macro quick_form(form, action="", method="post", id="", novalidate=False, button_map={}) %}
 <form
   {%- if action != None %} action="{{ action }}"{% endif -%}
   {%- if method %} method="{{ method }}"{% endif %}
@@ -61,9 +61,12 @@
 
   {% set ns = namespace(first_field=true) %}
   {%- for field in form %}
-    {% if field.widget.input_type != 'hidden' -%}
-      {{ form_field(field, ns.first_field) }}
-      {% set ns.first_field = false %}
+    {% if field.type in ['CSRFTokenField', 'HiddenField'] %}
+      {{ field() }}
+    {%- elif field.type == 'SubmitField' and field.name in button_map %}
+      {{ field(class='btn btn-' + button_map[field.name] + ' mb-3') }}
+    {%- else %}
+      {{ form_field(field, loop.index == 1) }}
     {%- endif %}
   {%- endfor %}  
 </form>

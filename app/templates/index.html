@@ -2,9 +2,12 @@
 {% import "bootstrap_wtf.html" as wtf %}
 
 {% block content %}
-    <h1>{{ _('Hi, %(username)s!', username=current_user.username) }}</h1>
+    <h1 class="mb-4">{{ _('Hi, %(username)s!', username=current_user.username) }}</h1>
     {% if form %}
-    {{ wtf.quick_form(form) }}
+    <div class="form-container">
+        <h2 class="h5 mb-4">{{ _('Share something') }}</h2>
+        {{ wtf.quick_form(form, button_map={'submit': 'primary'}) }}
+    </div>
     {% endif %}
     {% for post in posts %}
         {% include '_post.html' %}

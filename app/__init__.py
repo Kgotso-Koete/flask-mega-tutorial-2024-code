@@ -51,7 +51,10 @@ def create_app(config_class=Config):
             
             # For Heroku SearchBox/Elasticsearch
             if 'searchly.com' in es_url or 'searchbox.io' in es_url:
-                print(parsed)
+                print("Heroku SearchBox/Elasticsearch--------------->")
+                print (parsed)
+                print(parsed.hostname, parsed.username, parsed.password, parsed.port)
+                print("Heroku SearchBox/Elasticsearch--------------->")
                 
                 app.elasticsearch = Elasticsearch(
                     [parsed.hostname],

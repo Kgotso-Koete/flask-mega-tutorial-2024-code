@@ -4,7 +4,6 @@ This is an example application featured in my [Flask Mega-Tutorial](https://blog
 
 The version of the application featured in this repository corresponds to the 2024 edition of the Flask Mega-Tutorial. You can find the 2018 and 2021 versions of the code [here](https://github.com/miguelgrinberg/microblog-2018). And if for any strange reason you are interested in the original code, dating back to 2012, that is [here](https://github.com/miguelgrinberg/microblog-2012).
 
-
 # Flask Mega Tutorial
 
 ## Getting Started
@@ -20,7 +19,18 @@ Requirements for Heroku
 - psycopg2-binary==2.9.9
 - gunicorn==21.2.0
 
-### Setting Up Virtual Environment
+---
+
+### How to run this application locally
+
+1. Set up the Python virtual environment
+2. Install packages within the virtual environment
+3. Run database migrations
+4. Set up background tasks (post exports) with Redis
+
+---
+
+### 1.Set up the Python virtual environment
 
 1. Create a virtual environment:
 
@@ -46,23 +56,36 @@ Requirements for Heroku
    deactivate
    ```
 
-### Installing Dependencies
+### 2. Install packages within the virtual environment
 
-### Database Migrations
+Install necessary packages using the following command in a virtual environment terminal:
 
-After making changes to your database models, you'll need to create and apply migrations:
+```bash
+pip install -r requirements.txt
+```
+
+--
+
+### 3. Run database migrations
+
+Please run step and and 2 of the following commands to migrate the database before you first run the application.
+
+After making any changes to the database models, you'll need to create and apply the same migrations:
 
 1. Create a new migration (after modifying your models):
+
    ```bash
    flask db migrate -m "Description of changes"
    ```
 
 2. Apply the migration to update your database:
+
    ```bash
    flask db upgrade
    ```
 
 3. To check the current database revision:
+
    ```bash
    flask db current
    ```
@@ -72,47 +95,46 @@ After making changes to your database models, you'll need to create and apply mi
    flask db downgrade
    ```
 
+---
 
-With your virtual environment activated, install the required packages:
-
-```bash
-pip install -r requirements.txt
-```
-
-This will install all the necessary packages including:
-
-### Redis Setup
+### 4. Set up background tasks (post exports) with Redis
 
 This project uses Redis for task queue management. Follow these steps to set up Redis:
 
 1. Install Redis server:
+
    ```bash
    sudo apt update
    sudo apt install redis-server
    ```
 
 2. Start the Redis service:
+
    ```bash
    sudo systemctl start redis
    ```
 
 3. (Optional) To enable Redis to start on boot:
+
    ```bash
    sudo systemctl enable redis
    ```
 
 4. Verify Redis is running:
+
    ```bash
    redis-cli ping
    ```
+
    You should see `PONG` as the response.
 
 5. Install the Python Redis client:
+
    ```bash
    pip install redis
    ```
 
-6. Start the RQ worker in a separate terminal:
+6. Start the RQ worker in a separate terminal where the virtual environment is ACTIVATED (leave it running):
    ```bash
    rq worker microblog-tasks
    ```
@@ -122,10 +144,11 @@ This project uses Redis for task queue management. Follow these steps to set up 
 For production deployment on Heroku, use the Heroku Redis add-on:
 
 1. Add the Heroku Redis add-on (mini plan, which is the most cost-effective):
+
    ```bash
    heroku addons:create heroku-redis:mini
    ```
-   
+
    Note: The mini plan is free for development but has limitations. For production, consider a higher plan.
 
 2. The Redis URL will be automatically set in the `REDIS_URL` config var in Heroku.
@@ -147,20 +170,6 @@ Dump a list pf installed packages using the command:
 
 ```bash
 pip freeze > requirements.txt
-```
-
-### Run database migrations
-
-Migrate any database changes with the following:
-
-```bash
-flask db migrate -m "<insert your comment here>"
-```
-
-Upgrade the database to commit the changes:
-
-```bash
-flask db upgrade
 ```
 
 ## Debugging email serverr
@@ -231,7 +240,6 @@ docker run --name rq-worker -d --rm -e SECRET_KEY=my-secret-key \
 
 Note: The RQ worker command overrides the default container entrypoint to run the RQ worker instead of the web application. The worker needs access to the same code and environment variables as the main application to process background tasks.
 
-
 ## Heroku Add-ons
 
 This application uses the following Heroku add-ons. You can list them using:
@@ -243,16 +251,16 @@ heroku addons
 ### Current Add-ons Configuration:
 
 ```
-Add-on            Plan        Price        Max price State   
-───────────────── ─────────── ──────────── ───────── ─────── 
-heroku-postgresql essential-0 ~$0.007/hour $5/month  created 
- └─ as DATABASE                                              
-                                                             
-heroku-redis      mini        ~$0.004/hour $3/month  created 
- └─ as REDIS                                                 
-                                                             
-searchbox         starter     free         free      created 
- └─ as SEARCHBOX                                             
+Add-on            Plan        Price        Max price State
+───────────────── ─────────── ──────────── ───────── ───────
+heroku-postgresql essential-0 ~$0.007/hour $5/month  created
+ └─ as DATABASE
+
+heroku-redis      mini        ~$0.004/hour $3/month  created
+ └─ as REDIS
+
+searchbox         starter     free         free      created
+ └─ as SEARCHBOX
 ```
 
 To check detailed information about any add-on, use:
@@ -261,7 +269,6 @@ To check detailed information about any add-on, use:
 heroku addons:info heroku-redis  # For Redis
 heroku addons:info heroku-postgresql  # For PostgreSQL
 ```
-
 
 ## Tutorial
 

@@ -139,6 +139,34 @@ This project uses Redis for task queue management. Follow these steps to set up 
    rq worker microblog-tasks
    ```
 
+### 4. Set up background tasks (post exports) with Redis
+
+```bash
+   # Stop any existing Elasticsearch container
+   docker stop elasticsearch
+
+   # Remove any problematic data (optional but recommended for development)
+   docker volume prune -f
+
+   # Start Elasticsearch with optimized settings
+   docker run --name elasticsearch -d --rm -p 9200:9200 \
+   --memory="4GB" \
+   -e discovery.type=single-node \
+   -e xpack.security.enabled=false \
+   -e ES_JAVA_OPTS="-Xms2g -Xmx2g" \
+   -e xpack.security.enrollment.enabled=false \
+   -e cluster.routing.allocation.disk.threshold_enabled=false \
+   -e bootstrap.memory_lock=true \
+   --ulimit memlock=-1:-1 \
+   -t docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+
+   # Wait for startup (30-60 seconds), then verify health
+   sleep 30
+   curl -X GET "http://localhost:9200/_cluster/health"
+```
+
+---
+
 ### Heroku Redis Setup
 
 For production deployment on Heroku, use the Heroku Redis add-on:
@@ -270,6 +298,103 @@ heroku addons:info heroku-redis  # For Redis
 heroku addons:info heroku-postgresql  # For PostgreSQL
 ```
 
-## Tutorial
+### more on the Elasticsearch Setup
+
+#### Quick Start
+
+To run Elasticsearch for this application:
+
+```bash
+# Stop any existing Elasticsearch container
+docker stop elasticsearch
+
+# Remove any problematic data (optional but recommended for development)
+docker volume prune -f
+
+# Start Elasticsearch with optimized settings
+docker run --name elasticsearch -d --rm -p 9200:9200 \
+  --memory="4GB" \
+  -e discovery.type=single-node \
+  -e xpack.security.enabled=false \
+  -e ES_JAVA_OPTS="-Xms2g -Xmx2g" \
+  -e xpack.security.enrollment.enabled=false \
+  -e cluster.routing.allocation.disk.threshold_enabled=false \
+  -e bootstrap.memory_lock=true \
+  --ulimit memlock=-1:-1 \
+  -t docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+
+# Wait for startup (30-60 seconds), then verify health
+sleep 30
+curl -X GET "http://localhost:9200/_cluster/health"
+```
+
+#### Environment Configuration
+
+Add to your `.env` file:
+
+```bash
+ELASTICSEARCH_URL=http://localhost:9200
+```
+
+#### Troubleshooting
+
+##### If Elasticsearch cluster shows "red" status:
+
+1. **Check cluster health:**
+
+   ```bash
+   curl -X GET "http://localhost:9200/_cluster/health"
+   ```
+
+2. **Restart with fresh data:**
+   ```bash
+   docker stop elasticsearch
+   docker volume prune -f
+   # Run the startup command above
+   ```
+
+##### If posts save slowly or search fails:
+
+- Elasticsearch is likely in red status or not responding
+- Follow the restart procedure above
+- Temporarily disable search by commenting out `ELASTICSEARCH_URL` in `.env`
+
+#### Alternative: Use Stable Version
+
+If issues persist, try Elasticsearch 7.17:
+
+```bash
+docker stop elasticsearch
+
+docker run --name elasticsearch -d --rm -p 9200:9200 \
+  --memory="2GB" \
+  -e discovery.type=single-node \
+  -e xpack.security.enabled=false \
+  -e ES_JAVA_OPTS="-Xms1g -Xmx1g" \
+  -t docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+```
+
+#### Memory Requirements
+
+- **Minimum**: 4GB total system RAM (2GB for Elasticsearch)
+- **Recommended**: 8GB+ total system RAM for development
+
+#### Verification Commands
+
+```bash
+# Check if container is running
+docker ps
+
+# Check cluster health (should show "green" status)
+curl -X GET "http://localhost:9200/_cluster/health"
+
+# Check Elasticsearch info
+curl -X GET "http://localhost:9200"
+
+# View container logs
+docker logs elasticsearch
+```
+
+### Tutorial
 
 Chapter 1 [pdf file](./tutorial/chapter-1.pdf) and [YouTube](https://youtu.be/9FBDda0NCwo)

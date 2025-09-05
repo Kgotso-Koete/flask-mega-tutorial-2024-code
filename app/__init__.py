@@ -12,7 +12,8 @@ from elasticsearch import Elasticsearch
 from redis import Redis
 import rq
 from config import Config
-
+from elasticsearch import Elasticsearch
+from elasticsearch.exceptions import ConnectionError
 
 def get_locale():
     return request.accept_languages.best_match(current_app.config['LANGUAGES'])
@@ -38,8 +39,24 @@ def create_app(config_class=Config):
     mail.init_app(app)
     moment.init_app(app)
     babel.init_app(app, locale_selector=get_locale)
-    app.elasticsearch = Elasticsearch([app.config['ELASTICSEARCH_URL']],request_timeout=60) \
-        if app.config['ELASTICSEARCH_URL'] else None
+    
+    try:
+        app.elasticsearch = Elasticsearch(
+            [app.config['ELASTICSEARCH_URL']],
+        # Increase timeouts for operations
+        max_retries=3,        # Number of retries
+        retry_on_timeout=True,# Retry on timeout
+        request_timeout=30    # Request timeout
+        ) if app.config['ELASTICSEARCH_URL'] else None
+    
+        # Test the connection with timeout
+        if app.elasticsearch:
+            info = app.elasticsearch.info()
+            print("Elasticsearch connection successful:", info)
+    except ConnectionError as e:
+        print(f"Elasticsearch connection failed: {e}")
+        app.elasticsearch = None
+
     app.redis = Redis.from_url(app.config['REDIS_URL'])
     app.task_queue = rq.Queue('microblog-tasks', connection=app.redis)
 

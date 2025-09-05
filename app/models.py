@@ -19,15 +19,22 @@ from app.search import add_to_index, remove_from_index, query_index
 class SearchableMixin:
     @classmethod
     def search(cls, expression, page, per_page):
-        ids, total = query_index(cls.__tablename__, expression, page, per_page)
-        if total == 0:
-            return [], 0
-        when = []
-        for i in range(len(ids)):
-            when.append((ids[i], i))
-        query = sa.select(cls).where(cls.id.in_(ids)).order_by(
-            db.case(*when, value=cls.id))
-        return db.session.scalars(query), total
+        try:
+            ids, total = query_index(cls.__tablename__, expression, page, per_page)
+            if total == 0:
+                return db.session.scalars(sa.select(cls).where(False)), 0
+            
+            when = []
+            for i in range(len(ids)):
+                when.append((ids[i], i))
+            
+            query = sa.select(cls).where(cls.id.in_(ids)).order_by(
+                db.case(*when, value=cls.id))
+            return db.session.scalars(query), total
+        except Exception as e:
+            # Log the error and return empty results
+            current_app.logger.error(f'Error in search for {cls.__tablename__}: {e}')
+            return db.session.scalars(sa.select(cls).where(False)), 0
 
     @classmethod
     def before_commit(cls, session):
@@ -39,21 +46,35 @@ class SearchableMixin:
 
     @classmethod
     def after_commit(cls, session):
-        for obj in session._changes['add']:
-            if isinstance(obj, SearchableMixin):
-                add_to_index(obj.__tablename__, obj)
-        for obj in session._changes['update']:
-            if isinstance(obj, SearchableMixin):
-                add_to_index(obj.__tablename__, obj)
-        for obj in session._changes['delete']:
-            if isinstance(obj, SearchableMixin):
-                remove_from_index(obj.__tablename__, obj)
-        session._changes = None
+        try:
+            for obj in session._changes['add']:
+                if isinstance(obj, SearchableMixin):
+                    add_to_index(obj.__tablename__, obj)
+            for obj in session._changes['update']:
+                if isinstance(obj, SearchableMixin):
+                    add_to_index(obj.__tablename__, obj)
+            for obj in session._changes['delete']:
+                if isinstance(obj, SearchableMixin):
+                    remove_from_index(obj.__tablename__, obj)
+        except Exception as e:
+            current_app.logger.error(f'Error in after_commit: {e}')
+        finally:
+            session._changes = None
 
     @classmethod
     def reindex(cls):
-        for obj in db.session.scalars(sa.select(cls)):
-            add_to_index(cls.__tablename__, obj)
+        """Reindex all records - use with caution on large datasets"""
+        try:
+            count = 0
+            for obj in db.session.scalars(sa.select(cls)):
+                add_to_index(cls.__tablename__, obj)
+                count += 1
+                # Add a small delay every 100 records to avoid overwhelming Elasticsearch
+                if count % 100 == 0:
+                    current_app.logger.info(f'Reindexed {count} {cls.__tablename__} records')
+            current_app.logger.info(f'Completed reindexing {count} {cls.__tablename__} records')
+        except Exception as e:
+            current_app.logger.error(f'Error during reindex of {cls.__tablename__}: {e}')
 
 
 db.event.listen(db.session, 'before_commit', SearchableMixin.before_commit)

@@ -47,14 +47,18 @@ def create_app(config_class=Config):
     es_url = app.config.get('ELASTICSEARCH_URL', '').strip()
     if es_url:  # Check if URL exists and is not empty
         try:
+            parsed = urlparse(es_url)
+            
             # For Heroku SearchBox/Elasticsearch
             if 'searchly.com' in es_url or 'searchbox.io' in es_url:
-                # For Heroku SearchBox, we need to use the URL as-is but with proper scheme
-                if not es_url.startswith(('http://', 'https://')):
-                    es_url = f'https://{es_url}'
+                if not all([parsed.scheme, parsed.hostname, parsed.port]):
+                    raise ValueError("URL must include scheme, host, and port")
                 
                 app.elasticsearch = Elasticsearch(
-                    [es_url],
+                    [parsed.hostname],
+                    http_auth=(parsed.username, parsed.password) if parsed.username and parsed.password else None,
+                    scheme=parsed.scheme,
+                    port=parsed.port,
                     max_retries=3,
                     retry_on_timeout=True,
                     request_timeout=30,

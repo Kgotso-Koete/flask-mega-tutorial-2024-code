@@ -38,7 +38,7 @@ def create_app(config_class=Config):
     mail.init_app(app)
     moment.init_app(app)
     babel.init_app(app, locale_selector=get_locale)
-    app.elasticsearch = Elasticsearch([app.config['ELASTICSEARCH_URL']]) \
+    app.elasticsearch = Elasticsearch([app.config['ELASTICSEARCH_URL']],request_timeout=60) \
         if app.config['ELASTICSEARCH_URL'] else None
     app.redis = Redis.from_url(app.config['REDIS_URL'])
     app.task_queue = rq.Queue('microblog-tasks', connection=app.redis)

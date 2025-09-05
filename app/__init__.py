@@ -60,7 +60,7 @@ def create_app(config_class=Config):
                 
                 # Initialize with the complete URL
                 app.elasticsearch = Elasticsearch(
-                    es_url,
+                    [app.config.get('SEARCHBOX_URL', '').strip()],
                     max_retries=3,
                     retry_on_timeout=True,
                     request_timeout=30,

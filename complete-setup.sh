@@ -173,7 +173,7 @@ docker run --name elasticsearch -d --rm -p 9200:9200 \
   -e cluster.routing.allocation.disk.threshold_enabled=false \
   -e bootstrap.memory_lock=true \
   --ulimit memlock=-1:-1 \
-  -t docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+  -t docker.elastic.co/elasticsearch/elasticsearch:8.13.0
 
 echo "Waiting for Elasticsearch to start up (30-60 seconds)..."
 sleep 30

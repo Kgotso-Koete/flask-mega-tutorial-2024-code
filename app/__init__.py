@@ -14,6 +14,7 @@ import rq
 from config import Config
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import ConnectionError
+from urllib.parse import urlparse
 
 def get_locale():
     return request.accept_languages.best_match(current_app.config['LANGUAGES'])
@@ -42,26 +43,29 @@ def create_app(config_class=Config):
     # elastic search config
     # Fixed Elasticsearch configuration
     app.elasticsearch = None  # Default to None
-    
-    elasticsearch_url = app.config.get('ELASTICSEARCH_URL')
-    if elasticsearch_url and elasticsearch_url.strip():  # Check if URL exists and is not empty
+
+    es_url = app.config.get('ELASTICSEARCH_URL', '').strip()
+    if es_url:  # Check if URL exists and is not empty
         try:
+            # For Elasticsearch 8.x, we can use the URL directly
+            # The client will handle the connection details
             app.elasticsearch = Elasticsearch(
-                elasticsearch_url,  # Pass URL directly, not as a list
+                [es_url],
                 max_retries=3,
                 retry_on_timeout=True,
-                request_timeout=30
+                request_timeout=30,
+                verify_certs=False  # Disable SSL verification for local development
             )
             
-            # Test the connection with timeout
+            # Test the connection
+            if not app.elasticsearch.ping():
+                raise ConnectionError("Could not connect to Elasticsearch")
+                
             info = app.elasticsearch.info()
             app.logger.info(f"Elasticsearch connection successful: {info.get('version', {}).get('number', 'unknown')}")
             
-        except ConnectionError as e:
-            app.logger.warning(f"Elasticsearch connection failed: {e}")
-            app.elasticsearch = None
         except Exception as e:
-            app.logger.warning(f"Elasticsearch initialization failed: {e}")
+            app.logger.warning(f"Elasticsearch initialization failed: {str(e)}")
             app.elasticsearch = None
     else:
         app.logger.info("Elasticsearch URL not configured, search functionality disabled")

@@ -18,8 +18,8 @@ echo "5. Run Elasticsearch server within a Docker container"
 echo "6. Run the application"
 echo "=============================================================================="
 echo ""
-
-read -p "Press Enter to continue or Ctrl+C to cancel..."
+echo "Starting automated setup..."
+echo ""
 
 # ============================================================================
 # STEP 1: Set up the Python virtual environment
@@ -243,8 +243,7 @@ echo "   source .venv/bin/activate"
 echo "   rq worker microblog-tasks"
 echo ""
 
-read -p "Press Enter to start the Flask application..."
-
+# Automatically starting Flask application
 echo ""
 echo "Starting Flask application..."
 echo "Application will be available at: http://127.0.0.1:5000"

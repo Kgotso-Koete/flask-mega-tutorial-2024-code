@@ -27,6 +27,8 @@ Requirements for Heroku
 2. Install packages within the virtual environment
 3. Run database migrations
 4. Set up background tasks (post exports) with Redis
+5. Run the Elastic Search server within a Docker container
+6. Run the application
 
 ---
 
@@ -139,7 +141,11 @@ This project uses Redis for task queue management. Follow these steps to set up 
    rq worker microblog-tasks
    ```
 
-### 4. Set up background tasks (post exports) with Redis
+---
+
+### 5. Run the Elastic Search server within a Docker container
+
+Follow these steps to run the Elastic Search server within a Docker container:
 
 ```bash
    # Stop any existing Elasticsearch container
@@ -163,6 +169,16 @@ This project uses Redis for task queue management. Follow these steps to set up 
    # Wait for startup (30-60 seconds), then verify health
    sleep 30
    curl -X GET "http://localhost:9200/_cluster/health"
+```
+
+---
+
+### 6. Run the application
+
+Follow these steps to run the Flask application:
+
+```bash
+   flask run
 ```
 
 ---

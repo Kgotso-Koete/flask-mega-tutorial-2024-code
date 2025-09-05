@@ -252,5 +252,25 @@ echo ""
 echo "Press Ctrl+C to stop the application"
 echo ""
 
-# Start the Flask application (final step)
-flask run
+# Start the Flask application in the background
+flask run &
+FLASK_PID=$!
+
+# Give Flask a moment to start up
+sleep 2
+
+# Open the default web browser
+if command -v xdg-open &> /dev/null; then
+    # Linux
+    xdg-open "http://127.0.0.1:5000" &
+elif command -v open &> /dev/null; then
+    # macOS
+    open "http://127.0.0.1:5000" &
+elif command -v start &> /dev/null; then
+    # Windows
+    start "" "http://127.0.0.1:5000"
+fi
+
+# Wait for Flask to exit
+trap "kill $FLASK_PID 2> /dev/null" EXIT
+wait $FLASK_PID

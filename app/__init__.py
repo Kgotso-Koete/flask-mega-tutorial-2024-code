@@ -51,7 +51,7 @@ def create_app(config_class=Config):
             
             # Common configuration for all environments
             es_config = {
-                'hosts': [es_url],
+                
                 'retry_on_timeout': True,
                 'request_timeout': 30,
                 'max_retries': 3,
@@ -73,7 +73,7 @@ def create_app(config_class=Config):
                 })
             
             # Initialize Elasticsearch client with the configuration
-            app.elasticsearch = Elasticsearch(**es_config)
+            app.elasticsearch = Elasticsearch(es_url,**es_config)
             
             # Test the connection
             if not app.elasticsearch.ping():

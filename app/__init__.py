@@ -49,33 +49,31 @@ def create_app(config_class=Config):
         try:
             parsed = urlparse(es_url)
             
+            # Common configuration for all environments
+            es_config = {
+                'hosts': [es_url],
+                'retry_on_timeout': True,
+                'request_timeout': 30,
+                'max_retries': 3,
+            }
+            
             # For Heroku SearchBox/Elasticsearch
             if 'searchly.com' in es_url or 'searchbox.io' in es_url:
-                # Build the URL with credentials if they exist
-                auth_part = f"{parsed.username}:{parsed.password}@" if parsed.username and parsed.password else ""
-                port = f":{parsed.port}" if parsed.port else ("" if parsed.scheme == "https" else ":80")
-                
-                es_url = f"{parsed.scheme}://{auth_part}{parsed.hostname}{port}"
                 app.logger.info(f"Initializing Elasticsearch with URL: {es_url.replace(parsed.password, '*****') if parsed.password else es_url}")
-                
-                # Initialize with the complete URL
-                app.elasticsearch = Elasticsearch(
-                    [app.config.get('SEARCHBOX_URL', '').strip()],
-                    max_retries=3,
-                    retry_on_timeout=True,
-                    request_timeout=30,
-                    verify_certs=True  # Enable SSL for production
-                )
+                es_config.update({
+                    'verify_certs': True,  # Enable SSL for production
+                    'ssl_show_warn': True  # Show SSL warnings in logs
+                })
             else:
                 # For local development
                 app.logger.info(f"Initializing local Elasticsearch with URL: {es_url}")
-                app.elasticsearch = Elasticsearch(
-                    es_url,
-                    max_retries=3,
-                    retry_on_timeout=True,
-                    request_timeout=30,
-                    verify_certs=False  # Disable SSL verification for local development
-                )
+                es_config.update({
+                    'verify_certs': False,  # Disable SSL verification for local development
+                    'ssl_show_warn': False
+                })
+            
+            # Initialize Elasticsearch client with the configuration
+            app.elasticsearch = Elasticsearch(**es_config)
             
             # Test the connection
             if not app.elasticsearch.ping():

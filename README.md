@@ -13,6 +13,8 @@ The version of the application featured in this repository corresponds to the 20
 - Python 3.12.3
 - Virtual environment (recommended)
 - pip (Python package installer)
+- Docker (for running Elasticsearch)
+- Ubuntu 24.04.3 LTS (or any other Linux distribution)
 
 Requirements for Heroku
 
@@ -23,12 +25,36 @@ Requirements for Heroku
 
 ### How to run this application locally
 
+You can run the application by executing these 6 steps manually using the instructions from the README, or by executing the `complete-setup.sh` script.
+
 1. Set up the Python virtual environment
 2. Install packages within the virtual environment
 3. Run database migrations
 4. Set up background tasks (post exports) with Redis
 5. Run the Elastic Search server within a Docker container
 6. Run the application
+7. Visit the application at `http://localhost:5000`
+
+You can run the application by executing the `complete-setup.sh` script (originally used onUbuntu 24.04.3 LTS). Please read the scrips before executing them because they will make changes to your system such as (re)installing Redis and Elastic Search (via Docker).
+
+Make the automation scripts executable:
+
+```bash
+chmod +x complete-setup.sh
+chmod +x start-worker.sh
+```
+
+Run steps 1 to 6 by executing the following commands:
+
+```bash
+./complete-setup.sh
+```
+
+Run the background Redis cue in a separate window:
+
+```bash
+./start-worker.sh
+```
 
 ---
 
@@ -169,6 +195,16 @@ Follow these steps to run the Elastic Search server within a Docker container:
    # Wait for startup (30-60 seconds), then verify health
    sleep 30
    curl -X GET "http://localhost:9200/_cluster/health"
+```
+
+Index the posts:
+
+```bash
+   # In a terminal where your virtual environment is activated:
+flask shell
+>>> from app.models import Post
+>>> Post.reindex()
+>>> exit()
 ```
 
 ---

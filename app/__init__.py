@@ -57,10 +57,8 @@ def create_app(config_class=Config):
                 app.logger.info(f"------>Initializing Elasticsearch with host: {parsed.hostname}, port: {port}")
                 
                 app.elasticsearch = Elasticsearch(
-                    [parsed.hostname],
+                    [{'host': parsed.hostname, 'port': port, 'scheme': parsed.scheme}],
                     http_auth=(parsed.username, parsed.password) if parsed.username and parsed.password else None,
-                    # scheme=parsed.scheme,
-                    port=port,
                     max_retries=3,
                     retry_on_timeout=True,
                     request_timeout=30,

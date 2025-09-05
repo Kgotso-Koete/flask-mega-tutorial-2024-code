@@ -51,16 +51,16 @@ def create_app(config_class=Config):
             
             # For Heroku SearchBox/Elasticsearch
             if 'searchly.com' in es_url or 'searchbox.io' in es_url:
-                print("Heroku SearchBox/Elasticsearch--------------->")
-                print (parsed)
-                print(parsed.hostname, parsed.username, parsed.password, parsed.port)
-                print("Heroku SearchBox/Elasticsearch--------------->")
+                # Set default port based on scheme if not provided
+                port = parsed.port or (443 if parsed.scheme == 'https' else 80)
+                
+                app.logger.info(f"Initializing Elasticsearch with host: {parsed.hostname}, port: {port}")
                 
                 app.elasticsearch = Elasticsearch(
                     [parsed.hostname],
                     http_auth=(parsed.username, parsed.password) if parsed.username and parsed.password else None,
                     scheme=parsed.scheme,
-                    port=parsed.port,
+                    port=port,
                     max_retries=3,
                     retry_on_timeout=True,
                     request_timeout=30,

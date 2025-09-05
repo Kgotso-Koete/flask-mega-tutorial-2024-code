@@ -51,14 +51,16 @@ def create_app(config_class=Config):
             
             # For Heroku SearchBox/Elasticsearch
             if 'searchly.com' in es_url or 'searchbox.io' in es_url:
-                # Set default port based on scheme if not provided
-                port = parsed.port or (443 if parsed.scheme == 'https' else 80)
+                # Build the URL with credentials if they exist
+                auth_part = f"{parsed.username}:{parsed.password}@" if parsed.username and parsed.password else ""
+                port = f":{parsed.port}" if parsed.port else ("" if parsed.scheme == "https" else ":80")
                 
-                app.logger.info(f"------>Initializing Elasticsearch with host: {parsed.hostname}, port: {port}")
+                es_url = f"{parsed.scheme}://{auth_part}{parsed.hostname}{port}"
+                app.logger.info(f"Initializing Elasticsearch with URL: {es_url.replace(parsed.password, '*****') if parsed.password else es_url}")
                 
+                # Initialize with the complete URL
                 app.elasticsearch = Elasticsearch(
-                    [{'host': parsed.hostname, 'port': port, 'scheme': parsed.scheme}],
-                    http_auth=(parsed.username, parsed.password) if parsed.username and parsed.password else None,
+                    es_url,
                     max_retries=3,
                     retry_on_timeout=True,
                     request_timeout=30,
@@ -66,8 +68,9 @@ def create_app(config_class=Config):
                 )
             else:
                 # For local development
+                app.logger.info(f"Initializing local Elasticsearch with URL: {es_url}")
                 app.elasticsearch = Elasticsearch(
-                    [es_url],
+                    es_url,
                     max_retries=3,
                     retry_on_timeout=True,
                     request_timeout=30,

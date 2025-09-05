@@ -45,6 +45,8 @@ def create_app(config_class=Config):
     app.elasticsearch = None  # Default to None
 
     es_url = app.config.get('ELASTICSEARCH_URL', '').strip()
+    sb_url = app.config.get('SEARCHBOX_URL', '').strip()
+    final_es_url = None
     if es_url:  # Check if URL exists and is not empty
         try:
             parsed = urlparse(es_url)
@@ -64,6 +66,8 @@ def create_app(config_class=Config):
                     'verify_certs': True,  # Enable SSL for production
                     'ssl_show_warn': True  # Show SSL warnings in logs
                 })
+
+                final_es_url = sb_url
             else:
                 # For local development
                 app.logger.info(f"Initializing local Elasticsearch with URL: {es_url}")
@@ -71,9 +75,11 @@ def create_app(config_class=Config):
                     'verify_certs': False,  # Disable SSL verification for local development
                     'ssl_show_warn': False
                 })
+
+                final_es_url = es_url
             
             # Initialize Elasticsearch client with the configuration
-            app.elasticsearch = Elasticsearch(es_url,**es_config)
+            app.elasticsearch = Elasticsearch(final_es_url,**es_config)
             
             # Test the connection
             if not app.elasticsearch.ping():

@@ -53,6 +53,7 @@ def create_app(config_class=Config):
             if 'searchly.com' in es_url or 'searchbox.io' in es_url:
                 if not all([parsed.scheme, parsed.hostname, parsed.port]):
                     raise ValueError("URL must include scheme, host, and port")
+                print(parsed)
                 
                 app.elasticsearch = Elasticsearch(
                     [parsed.hostname],

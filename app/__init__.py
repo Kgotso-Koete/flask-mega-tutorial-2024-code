@@ -39,24 +39,33 @@ def create_app(config_class=Config):
     mail.init_app(app)
     moment.init_app(app)
     babel.init_app(app, locale_selector=get_locale)
+    # elastic search config
+    # Fixed Elasticsearch configuration
+    app.elasticsearch = None  # Default to None
     
-    try:
-        app.elasticsearch = Elasticsearch(
-            [app.config['ELASTICSEARCH_URL']],
-        # Increase timeouts for operations
-        max_retries=3,        # Number of retries
-        retry_on_timeout=True,# Retry on timeout
-        request_timeout=30    # Request timeout
-        ) if app.config['ELASTICSEARCH_URL'] else None
-    
-        # Test the connection with timeout
-        if app.elasticsearch:
+    elasticsearch_url = app.config.get('ELASTICSEARCH_URL')
+    if elasticsearch_url and elasticsearch_url.strip():  # Check if URL exists and is not empty
+        try:
+            app.elasticsearch = Elasticsearch(
+                elasticsearch_url,  # Pass URL directly, not as a list
+                max_retries=3,
+                retry_on_timeout=True,
+                request_timeout=30
+            )
+            
+            # Test the connection with timeout
             info = app.elasticsearch.info()
-            print("Elasticsearch connection successful:", info)
-    except ConnectionError as e:
-        print(f"Elasticsearch connection failed: {e}")
-        app.elasticsearch = None
-
+            app.logger.info(f"Elasticsearch connection successful: {info.get('version', {}).get('number', 'unknown')}")
+            
+        except ConnectionError as e:
+            app.logger.warning(f"Elasticsearch connection failed: {e}")
+            app.elasticsearch = None
+        except Exception as e:
+            app.logger.warning(f"Elasticsearch initialization failed: {e}")
+            app.elasticsearch = None
+    else:
+        app.logger.info("Elasticsearch URL not configured, search functionality disabled")
+    # Redis config
     app.redis = Redis.from_url(app.config['REDIS_URL'])
     app.task_queue = rq.Queue('microblog-tasks', connection=app.redis)
 

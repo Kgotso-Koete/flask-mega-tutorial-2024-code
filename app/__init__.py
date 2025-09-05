@@ -54,12 +54,12 @@ def create_app(config_class=Config):
                 # Set default port based on scheme if not provided
                 port = parsed.port or (443 if parsed.scheme == 'https' else 80)
                 
-                app.logger.info(f"Initializing Elasticsearch with host: {parsed.hostname}, port: {port}")
+                app.logger.info(f"------>Initializing Elasticsearch with host: {parsed.hostname}, port: {port}")
                 
                 app.elasticsearch = Elasticsearch(
                     [parsed.hostname],
                     http_auth=(parsed.username, parsed.password) if parsed.username and parsed.password else None,
-                    scheme=parsed.scheme,
+                    # scheme=parsed.scheme,
                     port=port,
                     max_retries=3,
                     retry_on_timeout=True,

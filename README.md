@@ -1,8 +1,19 @@
 # Welcome to Microblog!
 
-This is an example application featured in my [Flask Mega-Tutorial](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world). See the tutorial for instructions on how to work with it.
+This is a personal implementation of the Flask Mega-Tutorial by Miguel Grinberg. This project follows along with the tutorial to build a microblogging application using Flask, SQLAlchemy, and other modern web technologies.
 
-The version of the application featured in this repository corresponds to the 2024 edition of the Flask Mega-Tutorial. You can find the 2018 and 2021 versions of the code [here](https://github.com/miguelgrinberg/microblog-2018). And if for any strange reason you are interested in the original code, dating back to 2012, that is [here](https://github.com/miguelgrinberg/microblog-2012).
+## About the Tutorial
+
+The [Flask Mega-Tutorial](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world) is a comprehensive tutorial series that teaches web development using the Flask framework. The tutorial covers everything from basic routing to advanced features like full-text search, background jobs, and deployment.
+
+PDF versions of each chapter are available in the `tutorial/` directory of this repository.
+
+## Special Thanks and Acknowledgments
+
+Huge thanks to [Miguel Grinberg](https://blog.miguelgrinberg.com/) for creating and maintaining this excellent tutorial. His clear explanations and practical examples have been invaluable in learning Flask and web development best practices.
+
+- Original tutorial: [Flask Mega-Tutorial](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world)
+- Original repository: [github.com/miguelgrinberg/microblog](https://github.com/miguelgrinberg/microblog)
 
 # Flask Mega Tutorial
 
@@ -320,13 +331,34 @@ docker run --name rq-worker -d --rm -e SECRET_KEY=my-secret-key \
 
 Note: The RQ worker command overrides the default container entrypoint to run the RQ worker instead of the web application. The worker needs access to the same code and environment variables as the main application to process background tasks.
 
-## Heroku Add-ons
+## Heroku Deployment Notes
+
+### Add-ons
 
 This application uses the following Heroku add-ons. You can list them using:
 
 ```bash
 heroku addons
 ```
+
+### Elasticsearch Version Compatibility
+
+**Important Note on Elasticsearch Versions:**
+
+There is a known issue with SearchBox (Heroku's Elasticsearch add-on) and Elasticsearch versions. The most recent version of Elasticsearch that can be used with SearchBox is 7.x, while this project was developed using the Python module version 8.11.
+
+#### Fix for SearchBox Compatibility:
+1. Downgrade the following dependencies to version 7.x:
+   - elasticsearch
+   - elastic-transport
+   - urllib3 (to version <2.0.0)
+
+2. Use Elasticsearch 7 for local development with Docker
+3. Update the Elasticsearch parameters in `search.py` to match v7 style
+
+This is due to major changes in Elastic's licensing with v8, which affects SearchBox's ability to release their own versioning of the tool.
+
+Related GitHub issue: [elastic/elasticsearch-ruby#1429](https://github.com/elastic/elasticsearch-ruby/issues/1429)
 
 ### Current Add-ons Configuration:
 

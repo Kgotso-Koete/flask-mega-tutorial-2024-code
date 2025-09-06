@@ -275,7 +275,19 @@ Any time a change is made to the application or the Dockerfile, the container im
 docker build -t microblog:latest .
 ```
 
+Build a network with:
+
+```bash
+docker network create microblog-network
+```
+
 1. Command to run the MySQL server:
+
+Remove any existing mySQL container:
+
+```bash
+docker rm -f mysql
+```
 
 ```bash
 docker run --name mysql -d -e MYSQL_RANDOM_ROOT_PASSWORD=yes \
@@ -287,6 +299,12 @@ docker run --name mysql -d -e MYSQL_RANDOM_ROOT_PASSWORD=yes \
 
 2. Command to run the Redis server:
 
+Remove any existing Redis container:
+
+```bash
+docker rm -f redis
+```
+
 ```bash
 docker run --name redis -d -p 6379:6379 \
     --network microblog-network \
@@ -295,11 +313,17 @@ docker run --name redis -d -p 6379:6379 \
 
 3. Command to run the Elasticsearch server:
 
+Remove any existing Elastic Search container:
+
+```bash
+docker rm -f elasticsearch
+```
+
 ```bash
 docker run --name elasticsearch -d --rm -p 9200:9200 \
     -e discovery.type=single-node -e xpack.security.enabled=false \
     --network microblog-network \
-    -t docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+    -t docker.elastic.co/elasticsearch/elasticsearch:9.0.0
 ```
 
 4. Command to run the Flask application:
@@ -329,7 +353,15 @@ docker run --name rq-worker -d --rm -e SECRET_KEY=my-secret-key \
     microblog:latest worker -u redis://redis:6379/0 microblog-tasks
 ```
 
+Visit `http://localhost:8000` to see the application.
+
 Note: The RQ worker command overrides the default container entrypoint to run the RQ worker instead of the web application. The worker needs access to the same code and environment variables as the main application to process background tasks.
+
+The translations are not compiled by default. To compile them, run:
+
+```bash
+docker exec microblog flask translate compile
+```
 
 ## Heroku Deployment Notes
 
@@ -348,7 +380,9 @@ heroku addons
 There is a known issue with SearchBox (Heroku's Elasticsearch add-on) and Elasticsearch versions. The most recent version of Elasticsearch that can be used with SearchBox is 7.x, while this project was developed using the Python module version 8.11.
 
 #### Fix for SearchBox Compatibility:
+
 1. Downgrade the following dependencies to version 7.x:
+
    - elasticsearch
    - elastic-transport
    - urllib3 (to version <2.0.0)

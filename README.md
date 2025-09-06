@@ -201,7 +201,7 @@ Follow these steps to run the Elastic Search server within a Docker container:
    -e cluster.routing.allocation.disk.threshold_enabled=false \
    -e bootstrap.memory_lock=true \
    --ulimit memlock=-1:-1 \
-   -t docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+   -t docker.elastic.co/elasticsearch/elasticsearch:9.0.0
 
    # Wait for startup (30-60 seconds), then verify health
    sleep 30
@@ -268,6 +268,35 @@ pip freeze > requirements.txt
 Run `aiosmtpd -n -c aiosmtpd.handlers.Debugging -l localhost:8025` if debug is set to 0.
 
 ## Running the app as a Docker container
+
+#### Follow the instructions below to run the docker container using automated scripts
+
+Follow the steps below to run the app as a Docker container using automated scripts. Please inspect the scripts for safety before running them:
+
+Make the script executable:
+
+   ```bash
+   chmod +x start-microblog-docker.sh
+   ```
+
+   ```bash
+   chmod +x stop-microblog-docker.sh
+   ```
+
+Delete any existing app containers:
+
+   ```bash
+   ./stop-microblog-docker.sh
+   ```
+
+Start the Docker app:
+
+   ```bash
+   ./start-microblog-docker.sh
+   ```
+
+#### Follow the instructions below to run the docker container manually
+
 
 Any time a change is made to the application or the Dockerfile, the container image needs to be rebuilt:
 

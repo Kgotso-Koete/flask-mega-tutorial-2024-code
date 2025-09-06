@@ -4,11 +4,13 @@ services:
   mysql:
     image: mysql:latest
     container_name: mysql
+    env_file:
+      - .env
     environment:
       MYSQL_RANDOM_ROOT_PASSWORD: "yes"
       MYSQL_DATABASE: microblog
       MYSQL_USER: microblog
-      MYSQL_PASSWORD: ${DATABASE_PASSWORD:-your-database-password}
+      MYSQL_PASSWORD: ${DATABASE_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
@@ -21,8 +23,9 @@ services:
   redis:
     image: redis:latest
     container_name: redis
-    ports:
-      - "6379:6379"
+    # Remove external port mapping to avoid conflicts with host Redis
+    # ports:
+    #   - "6379:6379"
     networks:
       - microblog-network
     healthcheck:
@@ -37,19 +40,30 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g
+      - xpack.security.enrollment.enabled=false
+      - cluster.routing.allocation.disk.threshold_enabled=false
+      - bootstrap.memory_lock=true
     ports:
       - "9200:9200"
     networks:
       - microblog-network
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
       interval: 30s
-      timeout: 10s
-      retries: 5
+      timeout: 15s
+      retries: 10
+      start_period: 60s
 
   web:
     build: .
     container_name: microblog
+    env_file:
+      - .env
     ports:
       - "8000:5000"
     environment:
@@ -76,6 +90,8 @@ services:
   rq-worker:
     build: .
     container_name: rq-worker
+    env_file:
+      - .env
     environment:
       SECRET_KEY: ${SECRET_KEY}
       MAIL_SERVER: ${MAIL_SERVER}

@@ -21,13 +21,24 @@ docker-compose down
 # Also remove any standalone containers that might conflict
 docker rm -f mysql redis elasticsearch microblog rq-worker 2>/dev/null || true
 
+# Check for port conflicts and warn user
+echo -e "${BLUE}🔍 Checking for port conflicts...${NC}"
+if lsof -i:6379 >/dev/null 2>&1; then
+    echo -e "${RED}⚠️  Port 6379 is in use (likely Redis). Stopping host Redis service...${NC}"
+    sudo systemctl stop redis-server 2>/dev/null || sudo service redis-server stop 2>/dev/null || true
+fi
+
 # Build and start all services
 echo -e "${BLUE}🔨 Building and starting services...${NC}"
 docker-compose up --build -d
 
 # Wait for services to be ready
 echo -e "${BLUE}⏳ Waiting for services to start...${NC}"
-sleep 10
+sleep 15
+
+# Check individual service status
+echo -e "${BLUE}🔍 Checking service status...${NC}"
+docker-compose ps
 
 # Check if the web service is running
 if docker-compose ps web | grep -q "Up"; then

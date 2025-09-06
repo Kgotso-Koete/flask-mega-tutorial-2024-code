@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:latest
+    container_name: mysql
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+      MYSQL_DATABASE: microblog
+      MYSQL_USER: microblog
+      MYSQL_PASSWORD: ${DATABASE_PASSWORD:-your-database-password}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - microblog-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - microblog-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.0.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    networks:
+      - microblog-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  web:
+    build: .
+    container_name: microblog
+    ports:
+      - "8000:5000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY}
+      MAIL_SERVER: ${MAIL_SERVER}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USE_TLS: ${MAIL_USE_TLS}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      DATABASE_URL: mysql+pymysql://microblog:${DATABASE_PASSWORD}@mysql/microblog
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      REDIS_URL: redis://redis:6379/0
+      MS_TRANSLATOR_KEY: ${MS_TRANSLATOR_KEY}
+    networks:
+      - microblog-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+
+  rq-worker:
+    build: .
+    container_name: rq-worker
+    environment:
+      SECRET_KEY: ${SECRET_KEY}
+      MAIL_SERVER: ${MAIL_SERVER}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USE_TLS: ${MAIL_USE_TLS}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      DATABASE_URL: mysql+pymysql://microblog:${DATABASE_PASSWORD}@mysql/microblog
+      REDIS_URL: redis://redis:6379/0
+    entrypoint: ["venv/bin/rq", "worker", "-u", "redis://redis:6379/0", "microblog-tasks"]
+    networks:
+      - microblog-network
+    depends_on:
+      - redis
+      - web
+
+volumes:
+  mysql_data:
+
+networks:
+  microblog-network:
+    driver: bridge

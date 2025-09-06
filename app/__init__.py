@@ -40,62 +40,55 @@ def create_app(config_class=Config):
     mail.init_app(app)
     moment.init_app(app)
     babel.init_app(app, locale_selector=get_locale)
-    # elastic search config
-    # Fixed Elasticsearch configuration
-    app.elasticsearch = None  # Default to None
-
+    # Elasticsearch configuration - made optional
+    app.elasticsearch = None
     es_url = app.config.get('ELASTICSEARCH_URL', '').strip()
-    if es_url:  # Check if URL exists and is not empty
+    
+    if es_url:  # Only try to initialize if URL is provided
         try:
-            app.logger.info(f"Initializing local Elasticsearch with URL: {es_url}")
-            app.elasticsearch = Elasticsearch(es_url)
-
-            # Test the connection with more detailed error handling
-            try:
-                if not app.elasticsearch.ping():
-                    raise ConnectionError("Ping to Elasticsearch failed")
-                    
-                info = app.elasticsearch.info()
-                app.logger.info(f"Elasticsearch connection successful. Version: {info.get('version', {}).get('number', 'unknown')}")
+            app.logger.info(f"Attempting to connect to Elasticsearch at: {es_url}")
+            
+            # Initialize with timeout and retry settings
+            es = Elasticsearch(
+                [es_url],
+                verify_certs=False,  # Disable SSL verification for simplicity
+                max_retries=3,
+                retry_on_timeout=True,
+                request_timeout=10  # 10 second timeout
+            )
+            
+            # Test connection
+            if es.ping():
+                app.elasticsearch = es
+                info = es.info()
+                app.logger.info(f"Successfully connected to Elasticsearch. Version: {info.get('version', {}).get('number', 'unknown')}")
                 app.logger.info(f"Cluster name: {info.get('cluster_name')}")
                 app.logger.info(f"Cluster status: {info.get('status')}")
+            else:
+                app.logger.warning("Could not connect to Elasticsearch: Ping failed")
                 
-            except Exception as e:
-                error_msg = f"Failed to connect to Elasticsearch: {str(e)}"
-                if hasattr(e, 'info') and isinstance(e.info, dict):
-                    error_msg += f"\nError details: {e.info}"
-                app.logger.error(error_msg)
-                raise ConnectionError(error_msg) from e
-            
         except Exception as e:
-            error_msg = f"Elasticsearch initialization failed: {str(e)}"
-            if hasattr(e, 'info') and isinstance(e.info, dict):
-                error_msg += f"\nError details: {e.info}"
-            app.logger.error(error_msg)
-            app.elasticsearch = None
-            
-            # Re-raise to ensure the app knows initialization failed
-            raise
+            app.logger.warning(f"Elasticsearch connection failed: {str(e)}")
+            app.logger.info("Application will continue without search functionality")
     else:
-        app.logger.info("Elasticsearch URL not configured, search functionality disabled")
+        app.logger.info("ELASTICSEARCH_URL not configured. Search functionality will be disabled.")
+
     # Redis config
     app.redis = Redis.from_url(app.config['REDIS_URL'])
     app.task_queue = rq.Queue('microblog-tasks', connection=app.redis)
 
+    # Register blueprints
     from app.errors import bp as errors_bp
-    app.register_blueprint(errors_bp)
-
     from app.auth import bp as auth_bp
-    app.register_blueprint(auth_bp, url_prefix='/auth')
-
     from app.main import bp as main_bp
-    app.register_blueprint(main_bp)
-
-    from app.cli import bp as cli_bp
-    app.register_blueprint(cli_bp)
-
     from app.api import bp as api_bp
+    from app.cli import bp as cli_bp
+    
+    app.register_blueprint(errors_bp)
+    app.register_blueprint(auth_bp, url_prefix='/auth')
+    app.register_blueprint(main_bp)
     app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(cli_bp)
 
     if not app.debug and not app.testing:
         if app.config['MAIL_SERVER']:

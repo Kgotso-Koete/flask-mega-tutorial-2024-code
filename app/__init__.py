@@ -55,11 +55,11 @@ def create_app(config_class=Config):
             if 'searchly.com' in sb_url or 'searchbox.io' in sb_url:
                 app.logger.info(f"Initializing Heroku SearchBox with: {sb_url.replace(parsed.password, '*****') if parsed.password else sb_url}")
                 
-                # Explicit parameter approach for Heroku SearchBox
+                # Explicit parameter approach for Heroku SearchBox (Elasticsearch 9.x)
                 app.elasticsearch = Elasticsearch(
                     [parsed.hostname],
                     http_auth=(parsed.username, parsed.password),
-                    scheme=parsed.scheme,
+                    use_ssl=parsed.scheme == 'https',
                     port=parsed.port or 443,  # Default to 443 for HTTPS
                     verify_certs=True,
                     ssl_show_warn=True,
@@ -70,8 +70,11 @@ def create_app(config_class=Config):
             else:
                 # For local development
                 app.logger.info(f"Initializing local Elasticsearch with URL: {sb_url}")
+                parsed_local = urlparse(sb_url)
                 app.elasticsearch = Elasticsearch(
-                    [sb_url],
+                    [parsed_local.hostname or 'localhost'],
+                    port=parsed_local.port or 9200,
+                    use_ssl=parsed_local.scheme == 'https' if parsed_local.scheme else False,
                     verify_certs=False,
                     ssl_show_warn=False,
                     max_retries=3,

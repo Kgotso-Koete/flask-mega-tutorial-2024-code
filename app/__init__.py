@@ -47,20 +47,9 @@ def create_app(config_class=Config):
     es_url = app.config.get('ELASTICSEARCH_URL', '').strip()
     if es_url:  # Check if URL exists and is not empty
         try:
-            parsed = urlparse(es_url)
-            
-            # For Heroku SearchBox/Elasticsearch
-            if 'searchly.com' in es_url or 'searchbox.io' in es_url:
-                app.logger.info(f"Initializing Heroku SearchBox with: {es_url.replace(parsed.password, '*****') if parsed.password else es_url}")
-                
-                # Explicit parameter approach for Heroku SearchBox (Elasticsearch 9.x)
-                app.elasticsearch = Elasticsearch(es_url)
-            else:
-                # For local development
-                app.logger.info(f"Initializing local Elasticsearch with URL: {es_url}")
-                parsed_local = urlparse(es_url)
-                app.elasticsearch = Elasticsearch(es_url)
-            
+            app.logger.info(f"Initializing local Elasticsearch with URL: {es_url}")
+            app.elasticsearch = Elasticsearch(es_url)
+
             # Test the connection with more detailed error handling
             try:
                 if not app.elasticsearch.ping():
@@ -85,15 +74,8 @@ def create_app(config_class=Config):
             app.logger.error(error_msg)
             app.elasticsearch = None
             
-            # For Heroku, try to log the exact URL being used (with password masked)
-            if 'searchly.com' in es_url or 'searchbox.io' in es_url:
-                masked_url = es_url.replace(parsed.password, '*****') if parsed.password else es_url
-                app.logger.error(f"Connection attempt was made to: {masked_url}")
-                app.logger.error(f"Host: {parsed.hostname}, Port: {parsed.port or 443}, Scheme: {parsed.scheme}")
-                
             # Re-raise to ensure the app knows initialization failed
             raise
-            app.elasticsearch = None
     else:
         app.logger.info("Elasticsearch URL not configured, search functionality disabled")
     # Redis config

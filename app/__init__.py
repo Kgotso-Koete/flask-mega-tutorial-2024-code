@@ -45,42 +45,21 @@ def create_app(config_class=Config):
     app.elasticsearch = None  # Default to None
 
     es_url = app.config.get('ELASTICSEARCH_URL', '').strip()
-    sb_url = app.config.get('SEARCHBOX_URL', es_url).strip()
-    
-    if sb_url:  # Check if URL exists and is not empty
+    if es_url:  # Check if URL exists and is not empty
         try:
-            parsed = urlparse(sb_url)
+            parsed = urlparse(es_url)
             
             # For Heroku SearchBox/Elasticsearch
-            if 'searchly.com' in sb_url or 'searchbox.io' in sb_url:
-                app.logger.info(f"Initializing Heroku SearchBox with: {sb_url.replace(parsed.password, '*****') if parsed.password else sb_url}")
+            if 'searchly.com' in es_url or 'searchbox.io' in es_url:
+                app.logger.info(f"Initializing Heroku SearchBox with: {es_url.replace(parsed.password, '*****') if parsed.password else es_url}")
                 
                 # Explicit parameter approach for Heroku SearchBox (Elasticsearch 9.x)
-                app.elasticsearch = Elasticsearch(
-                    [parsed.hostname],
-                    http_auth=(parsed.username, parsed.password),
-                    use_ssl=parsed.scheme == 'https',
-                    port=parsed.port or 443,  # Default to 443 for HTTPS
-                    verify_certs=True,
-                    ssl_show_warn=True,
-                    max_retries=3,
-                    retry_on_timeout=True,
-                    request_timeout=30
-                )
+                app.elasticsearch = Elasticsearch(es_url)
             else:
                 # For local development
-                app.logger.info(f"Initializing local Elasticsearch with URL: {sb_url}")
-                parsed_local = urlparse(sb_url)
-                app.elasticsearch = Elasticsearch(
-                    [parsed_local.hostname or 'localhost'],
-                    port=parsed_local.port or 9200,
-                    use_ssl=parsed_local.scheme == 'https' if parsed_local.scheme else False,
-                    verify_certs=False,
-                    ssl_show_warn=False,
-                    max_retries=3,
-                    retry_on_timeout=True,
-                    request_timeout=30
-                )
+                app.logger.info(f"Initializing local Elasticsearch with URL: {es_url}")
+                parsed_local = urlparse(es_url)
+                app.elasticsearch = Elasticsearch(es_url)
             
             # Test the connection with more detailed error handling
             try:
@@ -107,8 +86,8 @@ def create_app(config_class=Config):
             app.elasticsearch = None
             
             # For Heroku, try to log the exact URL being used (with password masked)
-            if 'searchly.com' in sb_url or 'searchbox.io' in sb_url:
-                masked_url = sb_url.replace(parsed.password, '*****') if parsed.password else sb_url
+            if 'searchly.com' in es_url or 'searchbox.io' in es_url:
+                masked_url = es_url.replace(parsed.password, '*****') if parsed.password else es_url
                 app.logger.error(f"Connection attempt was made to: {masked_url}")
                 app.logger.error(f"Host: {parsed.hostname}, Port: {parsed.port or 443}, Scheme: {parsed.scheme}")
                 
